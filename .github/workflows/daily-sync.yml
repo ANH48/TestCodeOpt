@@ -1,0 +1,50 @@
+name: daily-sync
+
+on:
+  schedule:
+    - cron: "0 2 * * *" # 02:00 UTC every day
+  workflow_dispatch:
+
+concurrency:
+  group: daily-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t optibot-sync .
+
+      - name: Run scraper + uploader
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          FILE_SEARCH_STORE_NAME: ${{ vars.FILE_SEARCH_STORE_NAME }}
+        run: |
+          mkdir -p out && chmod 777 out
+          set -o pipefail
+          docker run --rm \
+            -e API_KEY="$GEMINI_API_KEY" \
+            -e FILE_SEARCH_STORE_NAME="$FILE_SEARCH_STORE_NAME" \
+            -e OUTPUT_DIR=/out/articles \
+            -v "$PWD/out:/out" -w /out \
+            optibot-sync /app/main.py 2>&1 | tee out/job.log
+
+      - name: Job summary
+        if: always()
+        run: |
+          echo '### OptiBot sync' >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          cat out/run_report.json >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || echo '{"error": "no report"}' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload run artefact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sync-run-${{ github.run_id }}
+          path: out/
+          retention-days: 30
