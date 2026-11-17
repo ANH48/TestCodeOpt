@@ -46,7 +46,8 @@ docker run --rm -e API_KEY=your-gemini-key optibot-sync main.py
 `.github/workflows/daily-sync.yml` builds the Dockerfile and runs it at 02:00 UTC every day on GitHub Actions. Each run shows its counts in the job summary and uploads the Markdown, `job.log` and `run_report.json` as a run artefact.
 It needs the repository secret `GEMINI_API_KEY` and, optionally, the variable `FILE_SEARCH_STORE_NAME`.
 
-- Job logs: <!-- TODO: link to the Actions run -->
+- Latest run: [daily-sync #1](https://github.com/ANH48/TestCodeOpt/actions/runs/44024837566) (394 scraped, added 0 / updated 0 / skipped 394 / removed 0)
+- All runs: [Actions › daily-sync](https://github.com/ANH48/TestCodeOpt/actions/workflows/daily-sync.yml)
 
 ## Assistant
 
